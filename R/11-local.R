@@ -10,7 +10,7 @@ set.seed(123)
 
 ## Data Import and Cleaning
 gss_tbl <- read_spss("../data/GSS2016.sav") %>%
-  # Remove the other two columns that predict a similar criterion.
+  # Remove the other two work hours columns that predict a similar criterion.
   select(-HRS1, -HRS2) %>%
   filter(!is.na(MOSTHRS)) %>%
   sapply(as.numeric) %>%
@@ -90,7 +90,7 @@ OLSparallel <- train(
   preProcess = c("center", "scale", "nzv", "medianImpute"),
   trControl = trainControl(method = "cv", indexOut = kfolds, number = 10, search = "grid", verboseIter = TRUE)
 )
-OLSparalleltoc <- toc()
+OLStocparallel <- toc()
 OLSparallel
 
 tic()
@@ -164,16 +164,16 @@ table1_tbl <- tibble(
   ho_rsq = c(holdout1, holdout2, holdout3, holdout4)
 )
 
-# This series of pipes creates a new tibble that outlines the run times of our various models when executed either normally or with parallelization. We do this to compare efficiency increases in run time.
+# This series of lines creates a new tibble that outlines the run times of our various models when executed either normally or with parallelization. We do this to compare efficiency increases in run time.
 table2_tbl <- tibble(algo = c("OLS Regression", "Elastic Net", "Random Forest", "eXtreme Gradient Boosting"),
                 original = c(OLStoc$callback_msg, Enettoc$callback_msg, random_forest_gumptoc$callback_msg, EGBtoc$callback_msg),
-                parallelized = c(OLSparalleltoc$callback_msg, Enettocparallel$callback_msg, random_forest_gumptocparallel$callback_msg, EGBtocparallel$callback_msg))
+                parallelized = c(OLStocparallel$callback_msg, Enettocparallel$callback_msg, random_forest_gumptocparallel$callback_msg, EGBtocparallel$callback_msg))
 
 # Q1: Which models benefited most from parallelization and why?
-# A: 
+# A: The eXtreme Gradient Boosting model most benefitted from parallelization because its run time had the largest reduction in raw seconds due to parallelization. Sure, the Elastic Net model had the best percentage of time saved due to parallelization, but it only improved run time by a few seconds in comparison to the minutes by which the eXtreme Gradiant Boosting model improved.
 
 # Q2: How big was the difference between the fastest and slowest parallelized model? Why?
-# A: 
+# A: The fastest parallelized model was the Elastic Net model, which took 4.5 seconds to run. The slowest parallelized model was the eXtreme Gradient Boosting model, which took 125.4 seconds to run. The difference in run times between these models is 120.9 seconds. But evaluating how "big" this differnce is depends upon how many times these models would be ran. If the models would be ran quite infrequently, then there may be no big difference between their run times because this two-minute difference in run time would be lost infrequently. If, however, the models are run quite frequently, then the difference between their run times would compound and subsequently seem bigger. The same logic applies if we need these models to produce results as quickly as possible. If that evaluation criteria is additionally placed on these models, then their difference in run times would be even bigger because they tax our added goal of producing predictions quickly.
 
 # Q3: If your supervisor asked you to pick a model for use in a production model, which would you recommend and why? Consider both Table 1 and Table 2 when providing an answer.
-# A: 
+# A: Across most scenarios, I would recommend the Random Forest model because it produces the highest R-squared value in our holdout sample. If the goal of machine learning is to maximize predictive capabilities across samples, then this is an easy decision to make given Table 1's results. If, however, the model's run time is also a relevant factor, then I would recommend the Elastic Net model because it produces a high R-squared value not terribly far off from the Random Forest Model while also having a noticeably shorter run time. In other words, the Elastic net balances predictive capabilities with low run time quite well.
