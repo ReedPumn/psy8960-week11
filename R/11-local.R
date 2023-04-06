@@ -4,6 +4,8 @@ library(tidyverse)
 library(haven)
 library(caret)
 library(tictoc)
+library(parallel)
+library(doParallel)
 set.seed(123)
 
 ## Data Import and Cleaning
@@ -75,6 +77,60 @@ EGB <- train(
 EGBtoc <- toc()
 EGB
 
+# Now we attempt to run the same models, but this time with parallelized processing. My computer has 8 clusters, so the following two lines divide the processing demands across these clusters. The models are almost identical, so they will not be described in comments for the sake of simplicity. The only differences are that I renamed the models and toc() output to a different name to enable comparisons in the table2_tbl. All other aspects of the models are identical.
+num_clusters <- makeCluster(7)
+registerDoParallel(num_clusters)
+
+tic()
+OLSparallel <- train(
+  MOSTHRS ~ .,
+  gss_train_tbl,
+  method = "lm",
+  na.action = na.pass,
+  preProcess = c("center", "scale", "nzv", "medianImpute"),
+  trControl = trainControl(method = "cv", indexOut = kfolds, number = 10, search = "grid", verboseIter = TRUE)
+)
+OLSparalleltoc <- toc()
+OLSparallel
+
+tic()
+Enetparallel <- train(
+  MOSTHRS ~ .,
+  gss_train_tbl,
+  method = "glmnet",
+  na.action = na.pass,
+  preProcess = c("center", "scale", "nzv", "medianImpute"),
+  trControl = trainControl(method = "cv", indexOut = kfolds, number = 10, search = "grid", verboseIter = TRUE)
+)
+Enettocparallel <- toc()
+Enetparallel
+
+tic()
+random_forest_gumpparallel <- train(
+  MOSTHRS ~ .,
+  gss_train_tbl,
+  method = "ranger",
+  na.action = na.pass,
+  preProcess = c("center", "scale", "nzv", "medianImpute"),
+  trControl = trainControl(method = "cv", indexOut = kfolds, number = 10, search = "grid", verboseIter = TRUE))
+random_forest_gumptocparallel <- toc()
+random_forest_gumpparallel
+
+tic()
+EGBparallel <- train(
+  MOSTHRS ~ .,
+  gss_train_tbl,
+  method = "xgbLinear", 
+  na.action = na.pass,
+  preProcess = c("center", "scale", "nzv", "medianImpute"),
+  trControl = trainControl(method = "cv", indexOut = kfolds, number = 10, search = "grid", verboseIter = TRUE))
+EGBtocparallel <- toc()
+EGBparallel
+
+# These two lines of code stop the parallelized processing. We return to normal processing because the computational load of running these models is done.
+stopCluster(num_clusters)
+registerDoSEQ()
+
 FirstR2 <- OLS$results$Rsquared %>%
   round(2) %>%
   str_remove(pattern = "^(?-)0")
@@ -111,4 +167,13 @@ table1_tbl <- tibble(
 # This series of pipes creates a new tibble that outlines the run times of our various models when executed either normally or with parallelization. We do this to compare efficiency increases in run time.
 table2_tbl <- tibble(algo = c("OLS Regression", "Elastic Net", "Random Forest", "eXtreme Gradient Boosting"),
                 original = c(OLStoc$callback_msg, Enettoc$callback_msg, random_forest_gumptoc$callback_msg, EGBtoc$callback_msg),
-                parallelized = )
+                parallelized = c(OLSparalleltoc$callback_msg, Enettocparallel$callback_msg, random_forest_gumptocparallel$callback_msg, EGBtocparallel$callback_msg))
+
+# Q1: Which models benefited most from parallelization and why?
+# A: 
+
+# Q2: How big was the difference between the fastest and slowest parallelized model? Why?
+# A: 
+
+# Q3: If your supervisor asked you to pick a model for use in a production model, which would you recommend and why? Consider both Table 1 and Table 2 when providing an answer.
+# A: 
