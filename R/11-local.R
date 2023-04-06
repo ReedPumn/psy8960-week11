@@ -38,7 +38,7 @@ OLS <- train(
   preProcess = c("center", "scale", "nzv", "medianImpute"),
   trControl = trainControl(method = "cv", indexOut = kfolds, number = 10, search = "grid", verboseIter = TRUE)
 )
-tocOLS <- toc()
+OLStoc <- toc()
 OLS
 
 tic()
@@ -50,7 +50,7 @@ Enet <- train(
   preProcess = c("center", "scale", "nzv", "medianImpute"),
   trControl = trainControl(method = "cv", indexOut = kfolds, number = 10, search = "grid", verboseIter = TRUE)
 )
-tocEnet <- toc()
+Enettoc <- toc()
 Enet
 
 tic()
@@ -110,5 +110,5 @@ table1_tbl <- tibble(
 
 # This series of pipes creates a new tibble that outlines the run times of our various models when executed either normally or with parallelization. We do this to compare efficiency increases in run time.
 table2_tbl <- tibble(algo = c("OLS Regression", "Elastic Net", "Random Forest", "eXtreme Gradient Boosting"),
-                original = ,
+                original = c(OLStoc$callback_msg, Enettoc$callback_msg, random_forest_gumptoc$callback_msg, EGBtoc$callback_msg),
                 parallelized = )
