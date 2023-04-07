@@ -1,0 +1,5 @@
+algo,supercomputer,supercomputer-12
+OLS Regression,5.82 sec elapsed,10.38 sec elapsed
+Elastic Net,12.21 sec elapsed,4.4 sec elapsed
+Random Forest,74.2 sec elapsed,80.93 sec elapsed
+eXtreme Gradient Boosting,199.92 sec elapsed,128.51 sec elapsed

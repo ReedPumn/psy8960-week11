@@ -1,5 +1,4 @@
 ## Script Settings and Resources
-setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 library(tidyverse)
 library(haven)
 library(caret)
@@ -9,7 +8,7 @@ library(doParallel)
 set.seed(123)
 
 ## Data Import and Cleaning
-gss_tbl <- read_spss("../data/GSS2016.sav") %>%
+gss_tbl <- read_spss("GSS2016.sav") %>%
   select(-HRS1, -HRS2) %>%
   filter(!is.na(MOSTHRS)) %>%
   sapply(as.numeric) %>%
@@ -154,12 +153,21 @@ holdout4 <- cor(predict(EGB, gss_test_tbl, na.action = na.pass), gss_test_tbl$MO
   str_remove(pattern = "^(?-)0")
 
 ## Publication
-table1_tbl <- tibble(
+# Note: I would have removed the leading zeros to Table 3 and Table 4, but I realized that after running my data with the supercomputer. I chose not to rerun this to remove leading zeros to save electricity and computational resources.
+# Column headings in Table 3 and Table 4 were updated to reflect that the supercomputer produced these results.
+Table3 <- tibble(
   algo = c("OLS Regression", "Elastic Net", "Random Forest", "eXtreme Gradient Boosting"),
-  cv_rsq = c(FirstR2, SecondR2, ThirdR2, FourthR2),
-  ho_rsq = c(holdout1, holdout2, holdout3, holdout4)
+  supercomputer = c(FirstR2, SecondR2, ThirdR2, FourthR2),
+  supercomputer-12 = c(holdout1, holdout2, holdout3, holdout4)
 )
 
-table2_tbl <- tibble(algo = c("OLS Regression", "Elastic Net", "Random Forest", "eXtreme Gradient Boosting"),
-                original = c(OLStoc$callback_msg, Enettoc$callback_msg, random_forest_gumptoc$callback_msg, EGBtoc$callback_msg),
-                parallelized = c(OLStocparallel$callback_msg, Enettocparallel$callback_msg, random_forest_gumptocparallel$callback_msg, EGBtocparallel$callback_msg))
+# Column names were updated to reflect the number of cores used during processing with the supercomputer.
+Table4 <- tibble(algo = c("OLS Regression", "Elastic Net", "Random Forest", "eXtreme Gradient Boosting"),
+                supercomputer = c(OLStoc$callback_msg, Enettoc$callback_msg, random_forest_gumptoc$callback_msg, EGBtoc$callback_msg),
+                "supercomputer-12" = c(OLStocparallel$callback_msg, Enettocparallel$callback_msg, random_forest_gumptocparallel$callback_msg, EGBtocparallel$callback_msg))
+
+# These lines export Table3 and Table4 to a csv format.
+write_csv(Table3, "table3.csv")
+write_csv(Table4, "table4.csv")
+
+# 
